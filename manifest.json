@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Headhunter-BPMSoft",
+  "options_page": "options.html",
+  "version": "0.1.0",
+  "description": "Headhunter-BPMSoft",
+  "permissions": [
+    "storage",
+    "tabs",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "http://localhost:5000/*",
+    "https://*.hh.ru/resume/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.hh.ru/resume/*"
+      ],
+      "js": [
+        "contentScript.js",
+        "globals.js"
+      ]
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "16": "assets/ext-icon.png",
+      "24": "assets/ext-icon.png",
+      "32": "assets/ext-icon.png"
+    },
+    "default_title": "Headhunter-BPMSoft",
+    "default_popup": "popup.html"
+  }
+}
