@@ -1,3 +1,5 @@
+const defaultCrmAddress = "https://autorec.crmgu.ru/";
+
 document.addEventListener("DOMContentLoaded", onDOMContentLoaded);
 const authInHeadhunterButton = document.getElementById("auth-in-hh-btn");
 authInHeadhunterButton.addEventListener("click", navigateToAuthorizeInHhPage);
@@ -88,33 +90,32 @@ const saveCandidateInCrmButton = document.getElementById(
 );
 saveCandidateInCrmButton.addEventListener("click", async () => {
     const settings = await chrome.storage.sync.get(["crmAddress"]);
-    const crmAddress = settings.crmAddress;
+    const crmAddress = settings.crmAddress || defaultCrmAddress;
     const resumeId = await getResumeId();
-    if (crmAddress) {
-        chrome.runtime.sendMessage(
-            {
-                requestType: "saveCandidateInCrm",
-                crmAddress,
-                resumeId,
-            },
-            (response) => {
-                console.log(response);
-                if (response?.success) {
-                    alert("Кандидат успешно сохранен!");
-                    window.open(
-                        `${crmAddress}Nui/ViewModule.aspx#CardModuleV2/CgrCandidatePage/edit/${response.candidateId}`
-                    );
-                } else if (response.redirectToLoginInCrmPage) {
-                    window.open(response.redirectUrl);
-                } else {
-                    console.log(response?.errorInfo);
-                    alert("Ошибка сохранения кандидата.");
-                }
-            }
-        );
-    } else {
-        alert('Заполните настройку "Адрес CRM"!');
+    if (!crmAddress) {
+        throw new Error("Адрес ЦРМ не может быть пустым");
     }
+    chrome.runtime.sendMessage(
+        {
+            requestType: "saveCandidateInCrm",
+            crmAddress,
+            resumeId,
+        },
+        (response) => {
+            console.log(response);
+            if (response?.success) {
+                alert("Кандидат успешно сохранен!");
+                window.open(
+                    `${crmAddress}Nui/ViewModule.aspx#CardModuleV2/CgrCandidatePage/edit/${response.candidateId}`
+                );
+            } else if (response.redirectToLoginInCrmPage) {
+                window.open(response.redirectUrl);
+            } else {
+                console.log(response?.errorInfo);
+                alert("Ошибка сохранения кандидата.");
+            }
+        }
+    );
 });
 
 const saveCandidateInCrmBlock = document.getElementById(
