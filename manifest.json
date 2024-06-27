@@ -13,6 +13,8 @@
   ],
   "host_permissions": [
     "http://localhost:5000/*",
+    "https://autorec-dev.crmguru.domain/*",
+    "https://autorec.crmgu.ru/*",
     "https://*.hh.ru/resume/*"
   ],
   "background": {
