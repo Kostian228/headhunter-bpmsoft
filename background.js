@@ -9,7 +9,7 @@ const tokenUrl = "https://hh.ru/oauth/token";
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.requestType === "saveCandidateInCrm") {
         chrome.cookies.get(
-            { url: "http://localhost:5000/", name: "BPMCSRF" },
+            { url: request.crmAddress, name: "BPMCSRF" },
             function (csrfToken) {
                 getResumeRequest(
                     request.resumeId,
