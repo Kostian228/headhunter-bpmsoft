@@ -14,12 +14,23 @@
         <title>Document</title>
     </head>
     <body>
-        <div class="container">
+        <div class="popup-container">
             <h1 class="main-header">Headhunter-BPMSoft</h1>
-            <h2 class="header">Авторизация в hh.ru</h1> 
-                <button id="auth-in-hh-btn" class="action-button blue">
-                    Авторизоваться
-                </button>
+            <div id="auth-in-hh" class="hidden">
+                <h2 class="header">Авторизация в hh.ru</h1>
+                    <button id="auth-in-hh-btn" class="action-button blue">
+                        Авторизоваться
+                    </button>
+            </div>
+            <div id="save-candidate-in-crm">
+                <h2 class="header">Сохранить кандидата?</h1>
+                    <button id="save-candidate-in-crm-btn" class="action-button blue">
+                        Сохранить
+                    </button>
+            </div>
+            <div id="go-to-resume-tab" class="hidden">
+                <p>Для сохранения кандидата, перейдите во вкладку с резюме.</p>
+            </div>
         </div>
     </body>
     <script type="module" src="popup.js"></script>
