@@ -3,7 +3,7 @@
   "name": "Headhunter-BPMSoft",
   "options_page": "options.html",
   "version": "0.1.0",
-  "description": "Headhunter-BPMSoft",
+  "description": "Сохранение кандидата из резюме hh.ru в BPMSoft",
   "permissions": [
     "storage",
     "tabs",
@@ -33,11 +33,16 @@
   ],
   "action": {
     "default_icon": {
-      "16": "assets/ext-icon.png",
-      "24": "assets/ext-icon.png",
-      "32": "assets/ext-icon.png"
+      "16": "/images/16.png",
+      "48": "/images/48.png",
+      "128": "/images/128.png"
     },
     "default_title": "Headhunter-BPMSoft",
     "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "/images/16.png",
+    "48": "/images/48.png",
+    "128": "/images/128.png"
   }
 }
