@@ -25,26 +25,19 @@ function checkActivetabIsResume() {
 
 function checkIsAuthorizedInHh() {
     return new Promise(function (resolve, reject) {
-        chrome.storage.sync.get(
-            ["hhRuAccessToken", "hhRuRefreshToken", "hhRuAccessTokenExpDate"],
-            function (items) {
-                if (items.hhRuAccessToken) {
-                    const currentDate = new Date().getTime();
-                    if (currentDate >= items.hhRuAccessTokenExpDate) {
-                        hideSaveCandidateBlock();
-                        refreshHhAccessToken(items.hhRuRefreshToken).then(
-                            (response) => resolve(true)
-                        );
-                    } else {
-                        resolve(true);
-                    }
-                } else {
-                    hideSaveCandidateBlock();
-                    resolve(false);
-                }
+        chrome.storage.sync.get(["hhRuAccessToken"], function (items) {
+            if (!items.hhRuAccessToken) {
+                hideSaveCandidateBlock();
+                resolve(false);
             }
-        );
+            resolve(true);
+        });
     });
+}
+
+function checkIsTokenExpired(accessTokenExpDate) {
+    const currentDate = new Date().getTime() / 1000;
+    return currentDate >= accessTokenExpDate;
 }
 
 function refreshHhAccessToken(hhRuRefreshToken) {
@@ -89,12 +82,34 @@ const saveCandidateInCrmButton = document.getElementById(
     "save-candidate-in-crm-btn"
 );
 saveCandidateInCrmButton.addEventListener("click", async () => {
-    const settings = await chrome.storage.sync.get(["crmAddress"]);
+    await saveCandidateClick();
+});
+
+const saveCandidateInCrmBlock = document.getElementById(
+    "save-candidate-in-crm"
+);
+const authInHhBlock = document.getElementById("auth-in-hh");
+
+async function saveCandidateClick() {
+    const settings = await chrome.storage.sync.get([
+        "crmAddress",
+        "hhRuRefreshToken",
+        "hhRuAccessTokenExpDate",
+    ]);
     const crmAddress = settings.crmAddress || defaultCrmAddress;
+    const refreshToken = settings.hhRuRefreshToken;
+    const accessTokenExpDate = settings.hhRuAccessTokenExpDate;
+    if (checkIsTokenExpired(accessTokenExpDate)) {
+        await refreshHhAccessToken(refreshToken);
+    }
     const resumeId = await getResumeId();
     if (!crmAddress) {
         throw new Error("Адрес ЦРМ не может быть пустым");
     }
+    saveCandidateInCrm(crmAddress, resumeId);
+}
+
+function saveCandidateInCrm(crmAddress, resumeId) {
     chrome.runtime.sendMessage(
         {
             requestType: "saveCandidateInCrm",
@@ -116,12 +131,7 @@ saveCandidateInCrmButton.addEventListener("click", async () => {
             }
         }
     );
-});
-
-const saveCandidateInCrmBlock = document.getElementById(
-    "save-candidate-in-crm"
-);
-const authInHhBlock = document.getElementById("auth-in-hh");
+}
 
 function hideSaveCandidateBlock() {
     authInHhBlock.classList.remove("hidden");

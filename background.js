@@ -4,7 +4,6 @@ const clientSecret =
     "V3FPUROINRRDBD9P6EN3UJFLNC21LB2TNEGNTETERRRRTR96SPS3HQDISGEHNE29";
 const tokenUrl = "https://hh.ru/oauth/token";
 
-//chrome.storage.sync.clear();
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.requestType === "saveCandidateInCrm") {
@@ -26,7 +25,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
     if (request.requestType === "refreshHhAccessToken") {
-        refreshAccessToken(tokenUrl, request, hhRuRefreshToken);
+        refreshAccessToken(tokenUrl, request.hhRuRefreshToken);
         return true;
     }
 });
@@ -114,7 +113,7 @@ function saveAccessToken(accessTokenResponse) {
     );
     chrome.storage.sync.set({
         hhRuAccessToken: accessTokenResponse.access_token,
-        hhRuAccessTokenExpDate: tokenExpDate.getTime(),
+        hhRuAccessTokenExpDate: tokenExpDate.getTime() / 1000,
         hhRuRefreshToken: accessTokenResponse.refresh_token,
     });
 }
