@@ -3,75 +3,115 @@ const clientId =
 const clientSecret =
     "V3FPUROINRRDBD9P6EN3UJFLNC21LB2TNEGNTETERRRRTR96SPS3HQDISGEHNE29";
 const tokenUrl = "https://hh.ru/oauth/token";
-
+const defaultCrmAddress = "https://autorec.crmgu.ru/";
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.requestType === "saveCandidateInCrm") {
-        chrome.cookies.get(
-            { url: request.crmAddress, name: "BPMCSRF" },
-            function (csrfToken) {
-                getResumeRequest(
-                    request.resumeId,
-                    request.crmAddress,
-                    csrfToken,
-                    sendResponse
-                );
-            }
-        );
+        saveCandidateInCrm(request.resumeId, sendResponse);
         return true;
     }
     if (request.requestType === "authorizeInHh") {
         navigateToAuthorizeInHhPage(clientId);
         return true;
     }
-    if (request.requestType === "refreshHhAccessToken") {
-        refreshAccessToken(tokenUrl, request.hhRuRefreshToken);
+    if (request.requestType === "checkCandidateExistsInCrm") {
+        checkCandidateExistsInCrm(request.resumeId, sendResponse);
         return true;
     }
 });
 
-function getResumeRequest(resumeId, crmAddress, csrfToken, sendResponse) {
-    chrome.storage.sync.get(["hhRuAccessToken"], (items) => {
-        const url = `${crmAddress}rest/CgrHeadhunterIntegrationService/GetResume`;
-        const accessToken = items.hhRuAccessToken;
-        const requestBody = {
-            accessToken,
-            resumeId,
-        };
-        fetch(url, {
-            method: "POST",
-            headers: {
-                BPMCSRF: csrfToken?.value,
-                "Content-Type": "application/json;charset=utf-8",
-            },
-            body: JSON.stringify(requestBody),
-        })
-            .then((response) => {
-                console.log(response);
-                if (response.redirected) {
-                    sendResponse({
-                        redirectToLoginInCrmPage: true,
-                        redirectUrl: `${crmAddress}Login/Login.html`,
-                    });
-                    return;
-                }
-                return response.json();
-            })
-            .catch((error) => {
-                const errorMessage = error.toString();
+async function saveCandidateInCrm(resumeId, sendResponse) {
+    const settings = await chrome.storage.sync.get([
+        "crmAddress",
+        "hhRuRefreshToken",
+        "hhRuAccessTokenExpDate",
+    ]);
+    const crmAddress = settings.crmAddress || defaultCrmAddress;
+    chrome.cookies.get(
+        { url: crmAddress, name: "BPMCSRF" },
+        async function (csrfToken) {
+            if (checkIsTokenExpired(settings.hhRuAccessTokenExpDate)) {
+                await refreshAccessToken(tokenUrl, settings.hhRuRefreshToken);
+            }
+            const items = await chrome.storage.sync.get(["hhRuAccessToken"]);
+            const accessToken = items.hhRuAccessToken;
+            const requestBody = {
+                accessToken,
+                resumeId,
+            };
+            await getResumeRequest(
+                requestBody,
+                crmAddress,
+                csrfToken,
+                sendResponse
+            );
+        }
+    );
+}
+
+async function checkCandidateExistsInCrm(resumeId, sendResponse) {
+    const settings = await chrome.storage.sync.get(["crmAddress"]);
+    const crmAddress = settings.crmAddress || defaultCrmAddress;
+    if (!crmAddress) {
+        throw new Error("Crm address cannot be empty.");
+    }
+    const checkCandidateExistsInCrmUrl = `${crmAddress}rest/CgrCheckCandidateExistsService/CheckCandidateExists/${resumeId}`;
+    fetch(checkCandidateExistsInCrmUrl)
+        .then((response) => response.json())
+        .then((json) => {
+            console.log(json);
+            sendResponse(json);
+        });
+}
+
+async function getResumeRequest(
+    requestBody,
+    crmAddress,
+    csrfToken,
+    sendResponse
+) {
+    const url = `${crmAddress}rest/CgrHeadhunterIntegrationService/GetResume`;
+    fetch(url, {
+        method: "POST",
+        headers: {
+            BPMCSRF: csrfToken?.value,
+            "Content-Type": "application/json;charset=utf-8",
+        },
+        body: JSON.stringify(requestBody),
+    })
+        .then((response) => {
+            console.log(response);
+            if (response.redirected) {
                 sendResponse({
-                    success: false,
-                    errorInfo: {
-                        message: errorMessage,
-                    },
+                    redirectToLoginInCrmPage: true,
+                    redirectUrl: `${crmAddress}Login/Login.html`,
                 });
-                throw new Error(errorMessage);
-            })
-            .then((json) => {
-                console.log(json);
-                sendResponse(json);
+                return;
+            }
+            return response.json();
+        })
+        .catch((error) => {
+            const errorMessage = error.toString();
+            sendResponse({
+                success: false,
+                errorInfo: {
+                    message: errorMessage,
+                },
             });
-    });
+            throw new Error(errorMessage);
+        })
+        .then((json) => {
+            console.log(json);
+            sendResponse({
+                success: true,
+                redirectUrl: `${crmAddress}Nui/ViewModule.aspx#CardModuleV2/CgrCandidatePage/edit/${json.candidateId}`,
+            });
+        });
+}
+
+function checkIsTokenExpired(accessTokenExpDate) {
+    const currentDate = new Date().getTime() / 1000;
+    return currentDate >= accessTokenExpDate;
 }
 
 chrome.webRequest.onHeadersReceived.addListener(
@@ -80,30 +120,33 @@ chrome.webRequest.onHeadersReceived.addListener(
     ["responseHeaders"]
 );
 
-function onHeadersReceivedCallBack(details) {
+async function onHeadersReceivedCallBack(details) {
     if (details.statusCode === 302) {
         const location = details.responseHeaders.find(
             (header) => header.name === "location"
         )?.value;
         if (location) {
             const authorizationCode = location.split("code=")[1];
-            getAccessToken(tokenUrl, clientId, clientSecret, authorizationCode);
+            await getAccessToken(
+                tokenUrl,
+                clientId,
+                clientSecret,
+                authorizationCode
+            );
         }
     }
 }
 
-function sendTokenRequest(url) {
-    fetch(url, {
+async function sendTokenRequest(url) {
+    const response = await fetch(url, {
         method: "POST",
-    })
-        .then((response) => {
-            console.log(response);
-            return response.json();
-        })
-        .then((json) => {
-            console.log(json);
-            saveAccessToken(json);
-        });
+    });
+    console.log(response);
+    const json = await response.json();
+    console.log(json);
+    if (json.access_token) {
+        saveAccessToken(json);
+    }
 }
 
 function saveAccessToken(accessTokenResponse) {
@@ -118,14 +161,19 @@ function saveAccessToken(accessTokenResponse) {
     });
 }
 
-function getAccessToken(tokenUrl, clientId, clientSecret, authorizationCode) {
+async function getAccessToken(
+    tokenUrl,
+    clientId,
+    clientSecret,
+    authorizationCode
+) {
     const url = `${tokenUrl}?grant_type=authorization_code&client_id=${clientId}&client_secret=${clientSecret}&code=${authorizationCode}`;
-    sendTokenRequest(url);
+    await sendTokenRequest(url);
 }
 
-function refreshAccessToken(tokenUrl, refreshToken) {
+async function refreshAccessToken(tokenUrl, refreshToken) {
     const url = `${tokenUrl}?grant_type=refresh_token&refresh_token=${refreshToken}`;
-    sendTokenRequest(url);
+    await sendTokenRequest(url);
 }
 
 function navigateToAuthorizeInHhPage(clientId) {

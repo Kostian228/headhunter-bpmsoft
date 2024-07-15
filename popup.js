@@ -1,5 +1,3 @@
-const defaultCrmAddress = "https://autorec.crmgu.ru/";
-
 document.addEventListener("DOMContentLoaded", onDOMContentLoaded);
 const authInHeadhunterButton = document.getElementById("auth-in-hh-btn");
 authInHeadhunterButton.addEventListener("click", navigateToAuthorizeInHhPage);
@@ -32,25 +30,6 @@ function checkIsAuthorizedInHh() {
             }
             resolve(true);
         });
-    });
-}
-
-function checkIsTokenExpired(accessTokenExpDate) {
-    const currentDate = new Date().getTime() / 1000;
-    return currentDate >= accessTokenExpDate;
-}
-
-function refreshHhAccessToken(hhRuRefreshToken) {
-    return new Promise((resolve) => {
-        chrome.runtime.sendMessage(
-            {
-                requestType: "refreshHhAccessToken",
-                hhRuRefreshToken,
-            },
-            (response) => {
-                resolve(response);
-            }
-        );
     });
 }
 
@@ -91,43 +70,28 @@ const saveCandidateInCrmBlock = document.getElementById(
 const authInHhBlock = document.getElementById("auth-in-hh");
 
 async function saveCandidateClick() {
-    const settings = await chrome.storage.sync.get([
-        "crmAddress",
-        "hhRuRefreshToken",
-        "hhRuAccessTokenExpDate",
-    ]);
-    const crmAddress = settings.crmAddress || defaultCrmAddress;
-    const refreshToken = settings.hhRuRefreshToken;
-    const accessTokenExpDate = settings.hhRuAccessTokenExpDate;
-    if (checkIsTokenExpired(accessTokenExpDate)) {
-        await refreshHhAccessToken(refreshToken);
-    }
     const resumeId = await getResumeId();
-    if (!crmAddress) {
-        throw new Error("Адрес ЦРМ не может быть пустым");
-    }
-    saveCandidateInCrm(crmAddress, resumeId);
+    saveCandidateInCrm(resumeId);
 }
 
-function saveCandidateInCrm(crmAddress, resumeId) {
+function saveCandidateInCrm(resumeId) {
     chrome.runtime.sendMessage(
         {
             requestType: "saveCandidateInCrm",
-            crmAddress,
             resumeId,
         },
         (response) => {
             console.log(response);
-            if (response?.success) {
-                alert("Кандидат успешно сохранен!");
-                window.open(
-                    `${crmAddress}Nui/ViewModule.aspx#CardModuleV2/CgrCandidatePage/edit/${response.candidateId}`
-                );
-            } else if (response.redirectToLoginInCrmPage) {
-                window.open(response.redirectUrl);
-            } else {
-                console.log(response?.errorInfo);
-                alert("Ошибка сохранения кандидата.");
+            if (response) {
+                if (response.success) {
+                    alert("Кандидат успешно сохранен!");
+                    window.open(response.redirectUrl);
+                } else if (response.redirectToLoginInCrmPage) {
+                    window.open(response.redirectUrl);
+                } else {
+                    console.log(response.errorInfo);
+                    alert("Ошибка сохранения кандидата.");
+                }
             }
         }
     );

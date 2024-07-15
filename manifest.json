@@ -28,6 +28,9 @@
       "js": [
         "contentScript.js",
         "globals.js"
+      ],
+      "css": [
+        "content_script.css"
       ]
     }
   ],
