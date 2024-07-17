@@ -15,7 +15,20 @@
     "http://localhost:5000/*",
     "https://autorec-dev.crmguru.domain/*",
     "https://autorec.crmgu.ru/*",
-    "https://*.hh.ru/resume/*"
+    "https://hh.ru/resume/*",
+    "https://*.hh.ru/resume/*",
+    "https://rabota.by/resume/*",
+    "https://*.rabota.by/resume/*",
+    "https://hh1.az/resume/*",
+    "https://*.hh1.az/resume/*",
+    "https://hh.uz/resume/*",
+    "https://*.hh.uz/resume/*",
+    "https://hh.kz/resume/*",
+    "https://*.hh.kz/resume/*",
+    "https://headhunter.ge/resume/*",
+    "https://*.headhunter.ge/resume/*",
+    "https://headhunter.kg/resume/*",
+    "https://*.headhunter.kg/resume/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -23,7 +36,23 @@
   "content_scripts": [
     {
       "matches": [
-        "https://*.hh.ru/resume/*"
+        "http://localhost:5000/*",
+        "https://autorec-dev.crmguru.domain/*",
+        "https://autorec.crmgu.ru/*",
+        "https://hh.ru/resume/*",
+        "https://*.hh.ru/resume/*",
+        "https://rabota.by/resume/*",
+        "https://*.rabota.by/resume/*",
+        "https://hh1.az/resume/*",
+        "https://*.hh1.az/resume/*",
+        "https://hh.uz/resume/*",
+        "https://*.hh.uz/resume/*",
+        "https://hh.kz/resume/*",
+        "https://*.hh.kz/resume/*",
+        "https://headhunter.ge/resume/*",
+        "https://*.headhunter.ge/resume/*",
+        "https://headhunter.kg/resume/*",
+        "https://*.headhunter.kg/resume/*"
       ],
       "js": [
         "contentScript.js",

@@ -1,3 +1,13 @@
+const resumeAddresses = [
+    "hh.ru/resume",
+    "rabota.by/resume",
+    "hh1.az/resume",
+    "hh.uz/resume",
+    "hh.kz/resume",
+    "headhunter.ge/resume",
+    "headhunter.kg/resume",
+];
+
 document.addEventListener("DOMContentLoaded", onDOMContentLoaded);
 const authInHeadhunterButton = document.getElementById("auth-in-hh-btn");
 authInHeadhunterButton.addEventListener("click", navigateToAuthorizeInHhPage);
@@ -12,7 +22,10 @@ function onDOMContentLoaded() {
 
 function checkActivetabIsResume() {
     getActiveTab().then((activeTab) => {
-        if (!activeTab.url.includes("hh.ru/resume")) {
+        const resumeAddress = resumeAddresses.find((a) =>
+            activeTab.url.includes(a)
+        );
+        if (!resumeAddress) {
             saveCandidateInCrmBlock.classList.add("hidden");
             document
                 .getElementById("go-to-resume-tab")
