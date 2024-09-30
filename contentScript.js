@@ -5,10 +5,12 @@
         "#a11y-main-content > div.resume-header-title > h2"
     );
 
-    function insertCandidateExistsAlert() {
-        const candidateExistsEl = document.createElement("p");
+    function insertCandidateExistsAlert(candidatePageUrl) {
+        const candidateExistsEl = document.createElement("a");
         candidateExistsEl.classList.add("candidat_exists_alert");
         candidateExistsEl.textContent = "Есть в CRM";
+        candidateExistsEl.href = candidatePageUrl;
+        candidateExistsEl.target = "_blank"
         mainHeader.insertAdjacentElement("afterend", candidateExistsEl);
     }
 
@@ -21,7 +23,8 @@
             },
             (response) => {
                 if (response.success && response.result) {
-                    setTimeout(insertCandidateExistsAlert, 500);
+                    const candidatePageUrl = `${response.crmAddress}Nui/ViewModule.aspx#CardModuleV2/CgrCandidatePage/edit/${response.candidateId}`;
+                    setTimeout(() => insertCandidateExistsAlert(candidatePageUrl), 500);
                 }
             }
         );

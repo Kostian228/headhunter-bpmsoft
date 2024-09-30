@@ -59,7 +59,7 @@ async function checkCandidateExistsInCrm(resumeId, sendResponse) {
     fetch(checkCandidateExistsInCrmUrl)
         .then((response) => response.json())
         .then((json) => {
-            console.log(json);
+            json.crmAddress = crmAddress;
             sendResponse(json);
         });
 }
